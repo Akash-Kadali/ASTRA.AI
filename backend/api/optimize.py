@@ -1,25 +1,15 @@
 """
-Resume optimizer API (FastAPI) — ENHANCED VERSION v3.0
+Resume optimizer API (FastAPI) — ENHANCED VERSION v4.0 (FRESHER-OPTIMIZED)
 
-IMPROVEMENTS OVER v2:
-- ✨ GPT-based IDEAL CANDIDATE PROFILING (implicit JD requirements)
-- ✨ TOP-3 IMPLICIT REQUIREMENTS the job DEFINITELY wants
-- ✨ RANKED IMPORTANCE of all bullet points
-- ✨ 8 bullets from resume keywords + 4 bullets from ideal candidate insights
-- ✨ NO keyword used twice across any bullet
-- ✨ GPT-based capitalization (no hardcoded map)
-- ✨ GPT-based company context (no hardcoded company map)
-- ✨ GPT-based skill validation (removes PhD, MS, random words)
-- ✨ Selective quantification: 4 numbers across 12 bullets (positions 2,6,7,10)
-- ✨ UNIQUE NUMBER TRACKING — never repeats same number
-- ✨ Action verb diversity tracking (no repetition across all 12)
-- ✨ Result phrases without numbers
-- ✨ Technical depth indicators
-- ✨ Skill progression across experience blocks
-- ✨ Believability constraints for intern-level
-- ✨ Bullet structure templates
-- ✨ Cross-bullet coherence
-- ✨ Industry-specific vocabulary via GPT
+NEW IN v4.0:
+- ✨ TECHNOLOGY SPECIFICITY: Maps generic terms to specific implementations
+  (LLM → Llama 3.1/GPT-4, NLP → BERT/RoBERTa, etc.)
+- ✨ FRESHER-APPROPRIATE SCOPE: Believable intern/junior achievements
+- ✨ REALISTIC METRICS: Intern-level numbers and project scales
+- ✨ TOOL CHAIN DETAILS: Specific tool versions and configurations
+- ✨ CONTEXTUAL TECHNOLOGY SELECTION: Picks technologies that fit together
+- ✨ PROGRESSIVE COMPLEXITY: Earlier internships = simpler tech, later = advanced
+- ✨ IMPLEMENTATION DETAILS: Shows HOW you used the technology, not just WHAT
 """
 
 import base64
@@ -96,6 +86,297 @@ async def gpt_json(prompt: str, temperature: float = 0.0, model: str = "gpt-4o-m
     content = (resp.choices[0].message.content or "").strip()
     return _json_from_text(content or "{}", {})
 
+TECHNOLOGY_SPECIFICITY_MAP = {
+    # LLMs
+    "llm": ["Llama 3.1", "GPT-4", "Claude Sonnet", "Mistral", "Gemini Pro", "GPT-3.5"],
+    "large language model": ["Llama", "GPT-4", "Claude", "Mistral", "Gemini"],
+    "language model": ["BERT", "RoBERTa", "T5", "DistilBERT", "ELECTRA"],
+    "transformer": ["BERT", "GPT-2", "T5", "BART", "RoBERTa", "DeBERTa"],
+    
+    # NLP
+    "nlp": ["BERT", "RoBERTa", "spaCy", "NLTK", "Sentence-BERT"],
+    "natural language processing": ["BERT for token classification", "RoBERTa for sentiment analysis", "T5 for text generation"],
+    "text classification": ["BERT with CLS token pooling", "RoBERTa with attention pooling", "DistilBERT"],
+    "sentiment analysis": ["VADER", "RoBERTa fine-tuned", "TextBlob"],
+    "named entity recognition": ["spaCy NER", "BERT-NER with CRF", "Flair embeddings"],
+    
+    # Agentic AI
+    "agentic ai": ["LangChain with ReAct", "AutoGPT", "LlamaIndex", "CrewAI"],
+    "ai agent": ["LangChain agent", "function-calling with GPT-4", "ReAct prompting"],
+    "multi-agent": ["LangGraph", "CrewAI", "custom agent orchestration"],
+    "agent": ["LangChain Agent", "OpenAI function calling", "custom tool-using agent"],
+    
+    # ML Frameworks - NO VERSIONS
+    "pytorch": ["PyTorch with CUDA", "PyTorch Lightning", "torch.nn modules"],
+    "tensorflow": ["TensorFlow with Keras", "tf.data pipelines", "TensorBoard"],
+    "keras": ["Keras with mixed precision", "custom Keras layers", "Keras callbacks"],
+    "scikit-learn": ["scikit-learn Pipeline", "GridSearchCV", "custom transformers"],
+    
+    # Deep Learning
+    "deep learning": ["CNN with ResNet backbone", "LSTM with attention", "Transformer encoder-decoder"],
+    "neural network": ["MLP with dropout", "ResNet transfer learning", "custom PyTorch architecture"],
+    "cnn": ["ResNet pretrained", "EfficientNet", "custom CNN"],
+    "rnn": ["bidirectional LSTM", "GRU with attention", "RNN with gradient clipping"],
+    "lstm": ["bidirectional LSTM", "LSTM with peephole", "stacked LSTM"],
+    
+    # Cloud & Infrastructure - NO VERSIONS
+    "aws": ["AWS SageMaker", "Lambda", "S3", "EC2"],
+    "kubernetes": ["Kubernetes with Helm", "K8s CronJobs", "KServe"],
+    "docker": ["Docker multi-stage builds", "Docker Compose", "custom Dockerfile"],
+    "cloud": ["AWS SageMaker", "GCP Vertex AI", "Azure ML"],
+    
+    # Data Engineering
+    "data pipeline": ["Airflow DAGs", "Prefect workflows", "ETL with Pandas"],
+    "etl": ["Apache Airflow", "dbt", "Spark ETL"],
+    "data processing": ["Pandas with Dask", "PySpark", "NumPy vectorization"],
+    "feature engineering": ["scikit-learn FeatureUnion", "custom extractors", "automated selection"],
+    
+    # MLOps
+    "mlops": ["MLflow tracking", "DVC versioning", "Kubeflow Pipelines"],
+    "model deployment": ["FastAPI with Docker", "TorchServe", "SageMaker endpoints"],
+    "ci/cd": ["GitHub Actions", "Jenkins pipeline", "GitLab CI"],
+    "monitoring": ["Prometheus with Grafana", "model drift detection", "CloudWatch"],
+    
+    # Databases - NO VERSIONS
+    "database": ["PostgreSQL with pgvector", "MongoDB", "Redis"],
+    "sql": ["PostgreSQL", "MySQL", "SQLite"],
+    "nosql": ["MongoDB", "DynamoDB", "Cassandra"],
+    "vector database": ["Pinecone", "Weaviate", "ChromaDB"],
+    
+    # Tools
+    "git": ["Git with feature branching", "GitHub PR workflows", "Git hooks"],
+    "jupyter": ["Jupyter with nbconvert", "JupyterLab", "papermill"],
+    "wandb": ["Weights & Biases tracking", "W&B Sweeps"],
+    "tensorboard": ["TensorBoard profiling", "custom plugins", "embeddings visualization"],
+}
+
+# NO VERSIONS in ecosystems either
+TECHNOLOGY_ECOSYSTEMS = {
+    "pytorch_stack": ["PyTorch", "Hugging Face Transformers", "WandB", "Docker"],
+    "tensorflow_stack": ["TensorFlow", "Keras", "TensorBoard", "TFX"],
+    "nlp_stack": ["BERT", "spaCy", "Hugging Face", "NLTK"],
+    "llm_stack": ["LangChain", "Llama", "ChromaDB", "FastAPI"],
+    "mlops_stack": ["MLflow", "Docker", "Kubernetes", "Airflow"],
+    "aws_stack": ["SageMaker", "Lambda", "S3", "ECR"],
+    "data_stack": ["Pandas", "NumPy", "Matplotlib", "scikit-learn"],
+}
+
+_used_specific_technologies: Set[str] = set()
+
+
+def reset_technology_tracking():
+    global _used_specific_technologies
+    _used_specific_technologies.clear()
+
+
+async def get_specific_technology(
+    generic_term: str,
+    context: str = "",
+    already_used: Optional[Set[str]] = None,
+    block_index: int = 0,
+) -> str:
+    """
+    Convert generic technology term to specific implementation.
+    
+    Args:
+        generic_term: Generic term like "LLM", "NLP", "AWS"
+        context: Context about what the technology is being used for
+        already_used: Set of technologies already mentioned (for dedup)
+        block_index: Which experience block (0=latest, 3=earliest)
+        
+    Returns:
+        Specific technology string like "Llama 3.1 70B for text generation"
+    """
+    global _used_specific_technologies
+    
+    if already_used is None:
+        already_used = _used_specific_technologies
+    
+    generic_lower = generic_term.lower().strip()
+    
+    # Get candidates from the mapping
+    candidates = TECHNOLOGY_SPECIFICITY_MAP.get(generic_lower, [])
+    
+    if not candidates:
+        # If no mapping, return the original with proper capitalization
+        return await fix_capitalization_gpt(generic_term)
+    
+    # Filter out already used technologies
+    available = [c for c in candidates if c.lower() not in already_used]
+    
+    if not available:
+        # If all used, just pick randomly from all candidates
+        available = candidates
+    
+    # For fresher resume: earlier internships get simpler tech, later get advanced
+    # block_index 0 = most recent (use advanced), 3 = oldest (use simpler)
+    complexity_bias = 0.3 if block_index == 0 else (0.5 if block_index <= 1 else 0.7)
+    
+    # Sort by perceived complexity (versions with numbers = more specific = higher complexity)
+    def complexity_score(tech: str) -> float:
+        score = 0.5
+        if re.search(r'\d+\.\d+', tech):  # Has version number
+            score += 0.3
+        if len(tech.split()) > 2:  # Longer description
+            score += 0.2
+        return score
+    
+    available_sorted = sorted(available, key=complexity_score)
+    
+    # Select based on complexity bias
+    idx = int(len(available_sorted) * complexity_bias)
+    idx = max(0, min(idx, len(available_sorted) - 1))
+    chosen = available_sorted[idx]
+    
+    # Add usage context if provided
+    if context and random.random() < 0.6:
+        # Use GPT to add context naturally
+        prompt = f"""Add a brief usage context to this technology mention for a resume bullet.
+
+Technology: {chosen}
+Context: {context}
+
+Return STRICT JSON: {{"specific_mention": "technology with context"}}
+
+Examples:
+- Input: "BERT-base", Context: "sentiment classification"
+  Output: {{"specific_mention": "BERT-base for sentiment classification"}}
+- Input: "Llama 3.1 70B", Context: "text generation"
+  Output: {{"specific_mention": "Llama 3.1 70B for instruction-tuned generation"}}
+- Input: "Kubernetes", Context: "model serving"
+  Output: {{"specific_mention": "Kubernetes with KServe for model serving"}}
+
+Keep it concise (under 8 words).
+"""
+        try:
+            data = await gpt_json(prompt, temperature=0.2)
+            specific = data.get("specific_mention", chosen)
+            chosen = specific
+        except Exception:
+            pass
+    
+    already_used.add(chosen.lower())
+    log_event(f"🔧 [TECH SPECIFIC] {generic_term} → {chosen}")
+    
+    return chosen
+
+
+async def get_technology_ecosystem(
+    primary_tech: str,
+    jd_context: str = "",
+) -> List[str]:
+    """Get a coherent set of technologies that work well together."""
+    primary_lower = primary_tech.lower()
+    
+    # Determine which ecosystem to use
+    ecosystem_key = None
+    if "pytorch" in primary_lower or "torch" in primary_lower:
+        ecosystem_key = "pytorch_stack"
+    elif "tensorflow" in primary_lower or "keras" in primary_lower:
+        ecosystem_key = "tensorflow_stack"
+    elif any(term in primary_lower for term in ["nlp", "bert", "roberta", "text"]):
+        ecosystem_key = "nlp_stack"
+    elif any(term in primary_lower for term in ["llm", "gpt", "llama", "language model"]):
+        ecosystem_key = "llm_stack"
+    elif any(term in primary_lower for term in ["mlops", "deployment", "pipeline"]):
+        ecosystem_key = "mlops_stack"
+    elif "aws" in primary_lower or "cloud" in primary_lower:
+        ecosystem_key = "aws_stack"
+    else:
+        ecosystem_key = "data_stack"
+    
+    base_ecosystem = TECHNOLOGY_ECOSYSTEMS.get(ecosystem_key, TECHNOLOGY_ECOSYSTEMS["data_stack"])
+    
+    # Add specific versions if needed
+    specific_ecosystem = []
+    for tech in base_ecosystem[:3]:  # Limit to 3-4 technologies per bullet
+        specific = await get_specific_technology(tech, jd_context)
+        specific_ecosystem.append(specific)
+    
+    return specific_ecosystem
+
+
+# ============================================================
+# 🎯 IMPLEMENTATION DETAIL PATTERNS
+# ============================================================
+
+IMPLEMENTATION_PATTERNS = {
+    "model_training": [
+        "utilizing {tech} with {batch_size} batch size and {optimizer} optimizer",
+        "implementing {tech} with {learning_rate} learning rate and early stopping",
+        "training {tech} with {epochs} epochs and validation-based checkpointing",
+        "fine-tuning {tech} on {dataset_description} using LoRA adapters",
+        "employing {tech} with mixed-precision training for efficiency",
+    ],
+    "data_processing": [
+        "processing data with {tech} using {num_workers} parallel workers",
+        "implementing {tech} with streaming data ingestion and batch processing",
+        "utilizing {tech} for {transformation_type} with validation checks",
+        "orchestrating {tech} with {scheduler} for automated execution",
+        "building {tech} with comprehensive error handling and logging",
+    ],
+    "deployment": [
+        "deploying {tech} with {infrastructure} and load balancing",
+        "containerizing {tech} using Docker with {memory}GB memory limit",
+        "serving predictions via {tech} with {latency}ms p95 latency",
+        "implementing {tech} with horizontal pod autoscaling on Kubernetes",
+        "establishing {tech} with blue-green deployment strategy",
+    ],
+    "evaluation": [
+        "evaluating performance using {tech} with {metric} as primary metric",
+        "conducting {tech} with stratified 5-fold cross-validation",
+        "measuring {tech} performance across {num_scenarios} test scenarios",
+        "validating {tech} using holdout test set and confusion matrix analysis",
+        "benchmarking {tech} against baseline models with statistical testing",
+    ],
+    "optimization": [
+        "optimizing {tech} through systematic hyperparameter search",
+        "tuning {tech} using Bayesian optimization with {num_trials} trials",
+        "refining {tech} with gradient accumulation and learning rate scheduling",
+        "enhancing {tech} via pruning and quantization techniques",
+        "improving {tech} through extensive ablation studies",
+    ],
+}
+
+# Fresher-appropriate values for implementation details
+FRESHER_IMPLEMENTATION_VALUES = {
+    "batch_size": ["16", "32", "64", "128"],
+    "optimizer": ["Adam", "AdamW", "SGD with momentum", "RMSprop"],
+    "learning_rate": ["1e-4", "3e-5", "5e-5", "1e-3"],
+    "epochs": ["10", "15", "20", "25", "30"],
+    "dataset_description": ["domain-specific corpus", "curated training set", "balanced dataset"],
+    "num_workers": ["4", "8", "12"],
+    "transformation_type": ["feature extraction", "normalization", "augmentation"],
+    "scheduler": ["Airflow DAG", "cron jobs", "event-driven triggers"],
+    "infrastructure": ["AWS ECS", "Kubernetes cluster", "Docker Swarm"],
+    "memory": ["2", "4", "8"],
+    "latency": ["150", "200", "250", "300"],
+    "metric": ["F1-score", "accuracy", "BLEU score", "ROC-AUC"],
+    "num_scenarios": ["5", "8", "10", "12"],
+    "num_trials": ["50", "100", "150"],
+}
+
+
+async def get_implementation_detail(
+    pattern_type: str,
+    tech: str,
+    context: str = "",
+) -> str:
+    """Generate a specific implementation detail with realistic values."""
+    patterns = IMPLEMENTATION_PATTERNS.get(pattern_type, IMPLEMENTATION_PATTERNS["model_training"])
+    template = random.choice(patterns)
+    
+    # Fill in placeholders with realistic values
+    filled = template.replace("{tech}", tech)
+    
+    for key, values in FRESHER_IMPLEMENTATION_VALUES.items():
+        placeholder = "{" + key + "}"
+        if placeholder in filled:
+            value = random.choice(values)
+            filled = filled.replace(placeholder, value)
+    
+    return filled
+
 
 # ============================================================
 # 🎲 REALISTIC NUMBER GENERATION WITH UNIQUE TRACKING
@@ -116,6 +397,7 @@ def reset_number_tracking():
 
 
 def generate_messy_decimal(min_val: float, max_val: float, decimal_places: int = 2) -> float:
+    """Generate realistic decimal numbers with odd last digits."""
     for _ in range(50):
         num = random.uniform(min_val, max_val)
         rounded = round(num, decimal_places)
@@ -130,15 +412,19 @@ def generate_messy_decimal(min_val: float, max_val: float, decimal_places: int =
     return round(min_val, decimal_places)
 
 
-def generate_messy_number(category: str, jd_context: str = "") -> str:
+def generate_messy_number(category: str, jd_context: str = "", is_fresher: bool = True) -> str:
+    """Generate realistic numbers appropriate for fresher/intern level."""
     global _used_numbers_by_category
+    
     for attempt in range(100):
         formatted = ""
         if category == "percent":
-            if "accuracy" in jd_context.lower() or "precision" in jd_context.lower():
-                base = random.randint(11, 29)
+            if is_fresher:
+                # More modest improvements for fresher
+                base = random.randint(8, 29)
             else:
-                base = random.randint(7, 89)
+                base = random.randint(15, 45)
+            
             if random.random() < 0.6:
                 decimal = generate_messy_decimal(base, base + 0.99, 2)
                 formatted = f"{decimal}%"
@@ -146,42 +432,64 @@ def generate_messy_number(category: str, jd_context: str = "") -> str:
                 if base % 2 == 0:
                     base += 1
                 formatted = f"{base}%"
+        
         elif category == "count":
-            base = random.choice([random.randint(567, 9999), random.randint(10000, 99999)])
+            if is_fresher:
+                # Smaller datasets for intern work
+                base = random.choice([
+                    random.randint(567, 9999),  # Thousands
+                    random.randint(10000, 50000)  # Tens of thousands
+                ])
+            else:
+                base = random.choice([
+                    random.randint(10000, 99999),
+                    random.randint(100000, 999999)
+                ])
+            
             if base % 2 == 0:
                 base += 1
+            
             if base >= 10000:
                 formatted = f"{base // 1000}K+"
             elif base >= 1000:
                 formatted = f"{base:,}"
             else:
                 formatted = str(base)
+        
         elif category == "metric":
+            # ML metrics appropriate for research/intern work
             metric_name = random.choice(["F1 score", "precision", "recall", "accuracy"])
-            value = generate_messy_decimal(0.73, 0.97, 2)
-            formatted = f"{metric_name} of {value}"
-        elif category == "comparison":
-            if "accuracy" in jd_context.lower():
-                start = random.randint(51, 67)
-                improvement = random.randint(17, 33)
+            if is_fresher:
+                value = generate_messy_decimal(0.73, 0.91, 2)
             else:
-                start = random.randint(41, 79)
-                improvement = random.randint(11, 29)
+                value = generate_messy_decimal(0.80, 0.97, 2)
+            formatted = f"{metric_name} of {value}"
+        
+        elif category == "comparison":
+            if is_fresher:
+                start = random.randint(63, 75)
+                improvement = random.randint(9, 19)
+            else:
+                start = random.randint(55, 75)
+                improvement = random.randint(15, 30)
+            
             if start % 2 == 0:
                 start += 1
             if improvement % 2 == 0:
                 improvement += 1
-            end = min(99, start + improvement)
+            
+            end = min(95 if is_fresher else 99, start + improvement)
             if end % 2 == 0:
                 end -= 1
             formatted = f"from {start}% to {end}%"
-
+        
         if formatted and formatted not in _used_numbers_by_category[category]:
             _used_numbers_by_category[category].add(formatted)
-            log_event(f"🎲 [NUMBER-{category.upper()}] Generated: {formatted}")
+            log_event(f"🎲 [NUMBER-{category.upper()}] Generated (fresher={is_fresher}): {formatted}")
             return formatted
-
-    fallback = f"{random.randint(13, 87)}%"
+    
+    # Fallback
+    fallback = f"{random.randint(11, 23)}%"
     _used_numbers_by_category[category].add(fallback)
     return fallback
 
@@ -194,41 +502,43 @@ QUANTIFICATION_TEMPLATES = {
         "elevating {metric} through {value} improvement",
     ],
     "count_scale": [
-        "processing {value} data samples daily",
-        "analyzing {value} records for pattern detection",
-        "handling {value} concurrent model predictions",
-        "evaluating {value} feature combinations systematically",
+        "processing {value} data samples",
+        "analyzing {value} records",
+        "handling {value} training examples",
+        "evaluating {value} test instances",
     ],
     "metric_achievement": [
-        "attaining {value} on validation datasets",
-        "reaching {value} across diverse test scenarios",
-        "delivering {value} in production deployment",
-        "securing {value} during rigorous evaluation",
+        "attaining {value} on validation set",
+        "reaching {value} on held-out test data",
+        "delivering {value} in final evaluation",
+        "securing {value} through systematic tuning",
     ],
     "comparison_hero": [
-        "improving model accuracy {value} through systematic hyperparameter optimization",
-        "enhancing prediction reliability {value} via ensemble methodology",
-        "accelerating inference speed {value} using optimized architecture",
-        "increasing system throughput {value} with distributed processing",
+        "improving model accuracy {value} through hyperparameter optimization",
+        "enhancing prediction quality {value} via systematic feature engineering",
+        "accelerating convergence {value} using learning rate scheduling",
+        "increasing robustness {value} with data augmentation techniques",
     ],
 }
 
 
-def generate_quantified_phrase(category: str, jd_context: str = "") -> str:
+def generate_quantified_phrase(category: str, jd_context: str = "", is_fresher: bool = True) -> str:
+    """Generate quantified phrases appropriate for fresher level."""
     templates = QUANTIFICATION_TEMPLATES.get(category, QUANTIFICATION_TEMPLATES["percent_improvement"])
     template = random.choice(templates)
+    
     if category == "percent_improvement":
-        metric = random.choice(["accuracy", "precision", "throughput", "efficiency"])
-        value = generate_messy_number("percent", jd_context)
+        metric = random.choice(["accuracy", "precision", "F1-score", "training efficiency"])
+        value = generate_messy_number("percent", jd_context, is_fresher)
         return template.format(metric=metric, value=value)
     elif category == "count_scale":
-        value = generate_messy_number("count", jd_context)
+        value = generate_messy_number("count", jd_context, is_fresher)
         return template.format(value=value)
     elif category == "metric_achievement":
-        value = generate_messy_number("metric", jd_context)
+        value = generate_messy_number("metric", jd_context, is_fresher)
         return template.format(value=value)
     elif category == "comparison_hero":
-        value = generate_messy_number("comparison", jd_context)
+        value = generate_messy_number("comparison", jd_context, is_fresher)
         return template.format(value=value)
     return template
 
@@ -341,13 +651,20 @@ def get_diverse_verb(category: str, fallback: str = "Developed") -> str:
     return chosen
 
 
-def get_verb_categories_for_context(company_type: str) -> List[str]:
+def get_verb_categories_for_context(company_type: str, block_index: int = 0) -> List[str]:
+    """Get verb categories appropriate for experience level."""
     if "research" in company_type.lower():
-        return ["research", "analysis", "development", "documentation"]
+        base = ["research", "analysis", "development", "documentation"]
     elif "industry" in company_type.lower():
-        return ["development", "deployment", "optimization", "automation"]
+        base = ["development", "deployment", "optimization", "automation"]
     else:
-        return ["development", "analysis", "collaboration", "data_work"]
+        base = ["development", "analysis", "collaboration", "data_work"]
+    
+    # Earlier internships (higher block_index) get more foundational verbs
+    if block_index >= 2:
+        base = ["analysis", "data_work", "documentation", "collaboration"] + base
+    
+    return base
 
 
 # ============================================================
@@ -356,46 +673,46 @@ def get_verb_categories_for_context(company_type: str) -> List[str]:
 
 RESULT_PHRASES = {
     "performance": [
-        "achieving enhanced model generalization across diverse datasets",
-        "resulting in improved prediction accuracy on held-out test data",
+        "achieving enhanced model generalization across diverse test cases",
+        "resulting in improved prediction reliability on held-out data",
         "enabling robust performance under varying input conditions",
-        "delivering production-grade model reliability and consistency",
-        "attaining competitive benchmark results against established baselines",
+        "delivering consistent model behavior across evaluation scenarios",
+        "attaining competitive results against baseline implementations",
     ],
     "efficiency": [
         "enabling faster experimentation and iteration cycles",
-        "streamlining the end-to-end development workflow significantly",
-        "reducing computational overhead while maintaining output quality",
-        "accelerating model training and evaluation throughput",
-        "improving overall resource utilization and pipeline efficiency",
+        "streamlining the model development workflow significantly",
+        "reducing computational overhead while maintaining quality",
+        "accelerating training convergence and evaluation throughput",
+        "improving overall resource utilization across the pipeline",
     ],
     "quality": [
-        "ensuring high-quality and reproducible model outputs",
-        "maintaining rigorous quality standards throughout development",
-        "achieving consistent and reliable experimental results",
-        "delivering enterprise-grade code quality and documentation",
-        "meeting stringent production readiness requirements",
+        "ensuring high-quality and reproducible experimental results",
+        "maintaining rigorous validation standards throughout development",
+        "achieving consistent outputs across multiple evaluation runs",
+        "delivering well-documented and maintainable code",
+        "meeting academic research quality standards",
     ],
     "scalability": [
-        "supporting seamless scaling to larger datasets",
-        "enabling distributed processing capabilities for production workloads",
-        "facilitating efficient handling of increased data volumes",
-        "ensuring system robustness under production-scale demands",
-        "accommodating future growth and extensibility requirements",
+        "supporting efficient scaling to larger datasets",
+        "enabling batch processing capabilities for high throughput",
+        "facilitating handling of increased data volumes",
+        "ensuring system stability under load testing",
+        "accommodating future extensibility requirements",
     ],
     "insight": [
-        "uncovering actionable insights from complex data patterns",
-        "revealing previously hidden correlations and trends",
-        "generating valuable intelligence for downstream applications",
-        "providing data-driven recommendations for model improvements",
-        "enabling informed decision-making through rigorous analysis",
+        "uncovering meaningful patterns from exploratory analysis",
+        "revealing previously unidentified correlations in data",
+        "generating actionable insights for model improvements",
+        "providing data-driven recommendations through systematic analysis",
+        "enabling informed iteration through rigorous evaluation",
     ],
     "collaboration": [
-        "facilitating cross-functional collaboration and knowledge sharing",
+        "facilitating knowledge sharing with research team members",
         "enabling seamless integration with existing team workflows",
-        "supporting reproducibility and handoff to other team members",
-        "improving documentation and codebase maintainability",
-        "establishing reusable components for future projects",
+        "supporting reproducibility and handoff to collaborators",
+        "improving documentation for future reference",
+        "establishing reusable components for ongoing projects",
     ],
 }
 
@@ -425,44 +742,44 @@ def get_result_phrase(category: str) -> str:
 
 TECHNICAL_DEPTH_PHRASES = {
     "ml_techniques": [
-        "employing stratified Cross-Validation for robust evaluation",
-        "utilizing Grid Search and Bayesian optimization for Hyperparameter Tuning",
-        "applying advanced Feature Engineering with domain-specific transformations",
-        "implementing custom Data Augmentation strategies for improved generalization",
-        "leveraging Ensemble Methods to combine multiple model predictions",
-        "conducting systematic Ablation Studies to validate design choices",
+        "employing stratified cross-validation for robust evaluation",
+        "utilizing grid search with nested CV for hyperparameter tuning",
+        "applying domain-informed feature engineering with validation",
+        "implementing data augmentation strategies for improved generalization",
+        "leveraging ensemble methods with soft voting",
+        "conducting systematic ablation studies to validate design choices",
     ],
     "dl_techniques": [
-        "incorporating Batch Normalization and Dropout for regularization",
-        "implementing Learning Rate Scheduling with warm restarts",
-        "utilizing Gradient Clipping to stabilize training dynamics",
-        "applying Transfer Learning with frozen backbone and fine-tuned heads",
-        "employing Attention Mechanisms for improved feature representation",
+        "incorporating batch normalization and dropout for regularization",
+        "implementing learning rate scheduling with cosine annealing",
+        "utilizing gradient clipping to stabilize training dynamics",
+        "applying transfer learning with frozen backbone layers",
+        "employing attention mechanisms for improved feature representation",
         "implementing residual connections for gradient flow optimization",
     ],
     "data_techniques": [
-        "implementing comprehensive Data Preprocessing pipelines with validation",
-        "applying Dimensionality Reduction for efficient feature representation",
-        "utilizing robust Outlier Detection and handling strategies",
-        "implementing Missing Value Imputation with multiple strategies",
-        "applying class balancing techniques for imbalanced datasets",
-        "conducting thorough Exploratory Data Analysis for insight generation",
+        "implementing comprehensive preprocessing pipelines with validation",
+        "applying PCA for efficient dimensionality reduction",
+        "utilizing IQR-based outlier detection and handling",
+        "implementing multiple imputation strategies for missing values",
+        "applying SMOTE for handling class imbalance",
+        "conducting thorough EDA with statistical hypothesis testing",
     ],
     "mlops_techniques": [
-        "implementing Model Versioning with comprehensive experiment tracking",
-        "establishing CI/CD pipelines for automated model validation",
-        "utilizing containerization with Docker for reproducible deployments",
-        "implementing Feature Store patterns for consistent feature serving",
-        "establishing Model Monitoring dashboards for production oversight",
-        "applying infrastructure-as-code practices for environment management",
+        "implementing experiment tracking with MLflow",
+        "establishing DVC for data and model versioning",
+        "utilizing Docker containerization for reproducible environments",
+        "implementing automated testing for model validation",
+        "establishing logging and monitoring for model behavior",
+        "applying CI/CD practices for streamlined deployment",
     ],
     "evaluation_techniques": [
-        "conducting Precision-Recall analysis for classification performance",
-        "implementing comprehensive error analysis and failure mode identification",
-        "utilizing statistical significance testing for model comparisons",
-        "applying Confusion Matrix analysis for multi-class evaluation",
-        "implementing custom evaluation metrics aligned with business objectives",
-        "conducting systematic bias and fairness audits",
+        "conducting precision-recall analysis for imbalanced datasets",
+        "implementing comprehensive error analysis with failure case review",
+        "utilizing statistical significance testing for model comparison",
+        "applying confusion matrix analysis for multi-class problems",
+        "implementing custom evaluation metrics aligned with objectives",
+        "conducting systematic bias detection across subgroups",
     ],
 }
 
@@ -478,27 +795,31 @@ def get_technical_depth_phrase(category: str) -> str:
 
 INTERN_PROGRESSION = {
     "early": {
-        "scope": ["assisted", "supported", "contributed to", "participated in"],
+        "scope": ["assisted with", "supported", "contributed to", "participated in"],
         "tasks": ["data preprocessing", "baseline implementation", "literature review", "code documentation"],
-        "autonomy": "under guidance of senior engineers",
-        "complexity": "foundational components",
+        "autonomy": "under close guidance of senior researchers",
+        "complexity": "foundational components and exploratory tasks",
+        "technologies": "standard libraries and established frameworks",
     },
     "mid": {
         "scope": ["developed", "implemented", "designed", "built"],
         "tasks": ["model development", "pipeline creation", "experiment execution", "performance analysis"],
-        "autonomy": "with mentorship from team leads",
-        "complexity": "core system components",
+        "autonomy": "with regular mentorship from project leads",
+        "complexity": "core system components and established methodologies",
+        "technologies": "modern frameworks with some customization",
     },
     "late": {
         "scope": ["led", "architected", "spearheaded", "owned"],
-        "tasks": ["end-to-end pipeline", "model optimization", "deployment preparation", "technical documentation"],
+        "tasks": ["end-to-end pipeline", "model optimization", "comprehensive evaluation", "technical documentation"],
         "autonomy": "independently with periodic reviews",
-        "complexity": "production-ready solutions",
+        "complexity": "production-ready solutions and novel approaches",
+        "technologies": "cutting-edge tools with advanced configurations",
     },
 }
 
 
 def get_progression_context(block_index: int, total_blocks: int = 4) -> Dict[str, Any]:
+    """Get appropriate progression context for experience block."""
     if block_index == 0:
         return INTERN_PROGRESSION["late"]
     elif block_index == total_blocks - 1:
@@ -513,18 +834,37 @@ def get_progression_context(block_index: int, total_blocks: int = 4) -> Dict[str
 
 BELIEVABILITY_RULES = {
     "collaboration_phrases": [
-        "in collaboration with senior engineers",
-        "as part of a cross-functional team",
-        "working closely with research mentors",
-        "under guidance of technical leads",
-        "contributing to team-wide initiatives",
-    ]
+        "in collaboration with senior researchers",
+        "as part of a cross-functional research team",
+        "working closely with Ph.D. students and postdocs",
+        "under guidance of faculty advisors",
+        "contributing to team-wide research initiatives",
+    ],
+    "scope_limiters": [
+        "for internal research use",
+        "as proof-of-concept implementation",
+        "for academic research purposes",
+        "within the lab environment",
+        "for experimental validation",
+    ],
 }
 
 
-def get_believability_phrase(scope: str = "medium") -> str:
-    if random.random() < 0.3:
+def get_believability_phrase(scope: str = "medium", block_index: int = 0) -> str:
+    """Get believability phrases appropriate for intern level."""
+    # Earlier internships more likely to mention collaboration
+    mention_collab = random.random() < (0.5 if block_index >= 2 else 0.3)
+    
+    if mention_collab:
         return random.choice(BELIEVABILITY_RULES["collaboration_phrases"])
+    
+    # Latest internship less likely to need scope limiting
+    if block_index == 0 and random.random() < 0.7:
+        return ""
+    
+    if random.random() < 0.3:
+        return random.choice(BELIEVABILITY_RULES["scope_limiters"])
+    
     return ""
 
 
@@ -555,6 +895,7 @@ Rules:
 - Acronyms: ML, AI, NLP, CV, CNN, RNN, LSTM, BERT, GPT, LLM, API, REST, CI/CD, ETL
 - Concepts: Machine Learning, Deep Learning, Natural Language Processing, Computer Vision
 - Databases: PostgreSQL, MongoDB, Redis, MySQL, DynamoDB, Elasticsearch
+- Specific models: Llama, GPT-4, BERT-base, RoBERTa, T5, DistilBERT
 - Keep sentence structure intact, only fix capitalization of tech terms
 - If text is a single skill/keyword, just return it properly capitalized
 
@@ -598,6 +939,7 @@ Rules:
 - Acronyms: ML, AI, NLP, CV, CNN, RNN, LSTM, BERT, GPT, LLM, API, REST, CI/CD
 - Concepts: Machine Learning, Deep Learning, Natural Language Processing
 - Databases: PostgreSQL, MongoDB, Redis, MySQL, DynamoDB
+- Specific models: Llama 3.1, GPT-4, BERT-base, RoBERTa-large
 - Each keyword should have first letter capitalized if not an acronym
 - Preserve multi-word terms as-is except for capitalization fixes
 
@@ -752,6 +1094,7 @@ Return STRICT JSON:
     "domain": "2-4 word domain description",
     "context": "1-2 sentence description of what ML/AI work is done here",
     "technical_vocabulary": ["5-8 domain-specific technical terms used at this company"],
+    "realistic_technologies": ["6-10 specific technologies/tools likely used here"],
     "ml_projects": ["3-5 realistic ML project descriptions for an intern here"],
     "believable_tasks": ["8-12 tasks an ML intern would realistically do here"],
     "progression_tasks": {{
@@ -768,6 +1111,7 @@ Rules:
 - For universities/research institutions, focus on research internship context
 - For companies, focus on industry internship context
 - Technical vocabulary should be domain-specific, not generic
+- realistic_technologies should be SPECIFIC (e.g., "PyTorch 2.0", not just "deep learning")
 """
     try:
         data = await gpt_json(prompt, temperature=0.2)
@@ -776,6 +1120,7 @@ Rules:
             "domain": data.get("domain", "ML/AI"),
             "context": data.get("context", "Technical internship applying Machine Learning."),
             "technical_vocabulary": data.get("technical_vocabulary", ["model development", "data analysis"]),
+            "realistic_technologies": data.get("realistic_technologies", ["Python", "PyTorch", "scikit-learn"]),
             "ml_projects": data.get("ml_projects", ["ML Model Development"]),
             "believable_tasks": data.get("believable_tasks", ["Model Development", "Data Analysis"]),
             "progression_tasks": data.get("progression_tasks", {
@@ -794,6 +1139,7 @@ Rules:
             "domain": "ML/AI",
             "context": "Technical internship applying Machine Learning and Data Science.",
             "technical_vocabulary": ["model development", "data analysis", "pipeline"],
+            "realistic_technologies": ["Python", "PyTorch", "scikit-learn", "Pandas", "NumPy"],
             "ml_projects": ["ML Model Development", "Data Pipeline Creation"],
             "believable_tasks": ["Model Development", "Data Analysis", "Testing", "Documentation"],
             "progression_tasks": {
@@ -915,7 +1261,8 @@ Return STRICT JSON:
             "requirement": "What the job implicitly wants (1 short sentence)",
             "importance_rank": 1,
             "why_implicit": "Why this isn't stated but critical",
-            "bullet_theme": "A concrete resume bullet theme showing this capability"
+            "bullet_theme": "A concrete resume bullet theme showing this capability",
+            "specific_technologies": ["2-3 specific tech implementations that demonstrate this"]
         }},
         ... (exactly 6 implicit requirements, ranked 1-6 by importance)
     ],
@@ -925,10 +1272,12 @@ Return STRICT JSON:
         "Concrete thing #3 the job DEFINITELY wants candidates to have done"
     ],
     "ideal_candidate_bullet_themes": [
-        "4 specific resume bullet THEMES that would make this candidate stand out",
-        "Each theme is a concrete past-experience description (not a skill name)",
-        "These are things NOT derivable from JD keywords alone",
-        "They come from understanding what the company truly values"
+        {{
+            "theme": "Specific resume bullet theme",
+            "specific_tech_example": "Exact technology implementation (e.g., 'fine-tuned Llama 3.1 70B')",
+            "implementation_detail": "How it was done (e.g., 'with LoRA adapters on 50K samples')"
+        }},
+        ... (4 themes)
     ],
     "differentiation_factors": [
         "3-4 factors that separate a good candidate from a great one for this role"
@@ -940,8 +1289,10 @@ CRITICAL RULES:
 - Think about: company culture, team dynamics, hidden expectations
 - Think about: what past projects would impress this specific team
 - top_3_must_haves should be CONCRETE PAST EXPERIENCES, not skills
-- ideal_candidate_bullet_themes should be ACTIONABLE resume bullet ideas
+- ideal_candidate_bullet_themes should be SPECIFIC TECHNOLOGY implementations
+- specific_technologies should be ACTUAL tech names (Llama 3.1, BERT-base, K8s 1.28)
 - Each bullet theme must be distinct and non-overlapping
+- For fresher roles, focus on learning ability and foundational skills
 """
     try:
         data = await gpt_json(prompt, temperature=0.3, model="gpt-4o-mini")
@@ -971,10 +1322,26 @@ CRITICAL RULES:
                 "Demonstrated ability to iterate quickly on model experiments",
             ],
             "ideal_candidate_bullet_themes": [
-                "End-to-end ML pipeline development with production deployment",
-                "Large-scale data processing and feature engineering",
-                "Model experimentation with systematic evaluation",
-                "Cross-functional collaboration on ML-driven products",
+                {
+                    "theme": "End-to-end ML pipeline development",
+                    "specific_tech_example": "PyTorch 2.1 with custom data loaders",
+                    "implementation_detail": "processing 50K samples with DataLoader optimization"
+                },
+                {
+                    "theme": "Large-scale data processing",
+                    "specific_tech_example": "Pandas with Dask for parallelization",
+                    "implementation_detail": "handling 100K+ records with efficient chunking"
+                },
+                {
+                    "theme": "Model experimentation with systematic evaluation",
+                    "specific_tech_example": "MLflow experiment tracking",
+                    "implementation_detail": "logging 50+ experiments with hyperparameter sweeps"
+                },
+                {
+                    "theme": "Cross-functional collaboration on ML projects",
+                    "specific_tech_example": "Git with feature branching workflow",
+                    "implementation_detail": "coordinating with 3-5 team members via PRs"
+                },
             ],
             "differentiation_factors": [
                 "Production ML experience", "Scale of data handled",
@@ -993,9 +1360,10 @@ async def rank_all_bullet_points(
     ideal_candidate: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
-    ✨ NEW: Rank ALL bullet point themes by importance.
+    ✨ ENHANCED: Rank ALL bullet point themes by importance.
     Determines which 8 come from keywords and which 4 from ideal candidate.
     Ensures NO keyword is used twice.
+    NOW includes specific technology implementations.
     """
     top_3 = ideal_candidate.get("top_3_must_haves", [])
     bullet_themes = ideal_candidate.get("ideal_candidate_bullet_themes", [])
@@ -1022,6 +1390,8 @@ Return STRICT JSON:
             "primary_keyword": "one keyword from JD (UNIQUE, never repeated)",
             "secondary_keywords": ["1-2 supporting keywords"],
             "theme": "What this bullet should demonstrate",
+            "specific_technology": "Exact tech to mention (e.g., 'Llama 3.1 70B', 'BERT-base-uncased')",
+            "implementation_context": "How the tech was used (e.g., 'with LoRA adapters', 'for sentiment analysis')",
             "source": "keyword"
         }},
         ... (exactly 8 bullets sourced from JD keywords)
@@ -1033,6 +1403,8 @@ Return STRICT JSON:
             "theme": "What this bullet should demonstrate (from ideal candidate analysis)",
             "implicit_requirement": "Which implicit requirement this addresses",
             "supporting_keywords": ["1-2 JD keywords to weave in naturally"],
+            "specific_technology": "Exact tech implementation",
+            "implementation_detail": "Concrete detail about usage",
             "source": "ideal_candidate"
         }},
         ... (exactly 4 bullets sourced from ideal candidate insights)
@@ -1053,6 +1425,9 @@ CRITICAL RULES:
 6. importance_ranking: order all 12 bullet indices from most to least important
 7. The 4 ideal_candidate bullets should cover the top_3_must_haves
 8. Block 0 = most recent experience, Block 3 = oldest
+9. specific_technology MUST be exact implementations (not generic "NLP" but "BERT-base")
+10. implementation_context shows HOW the technology was used
+11. For fresher resume: earlier blocks (2-3) use simpler tech, later (0-1) use advanced
 """
     try:
         data = await gpt_json(prompt, temperature=0.2)
@@ -1083,16 +1458,30 @@ CRITICAL RULES:
                 "primary_keyword": kw,
                 "secondary_keywords": [],
                 "theme": f"Demonstrate {kw} expertise",
+                "specific_technology": kw,
+                "implementation_context": "for model development",
                 "source": "keyword",
             })
         ideal_bullets = []
-        for i, theme in enumerate(bullet_themes[:4]):
+        for i in range(4):
+            theme_data = bullet_themes[i] if i < len(bullet_themes) else {}
+            if isinstance(theme_data, dict):
+                theme = theme_data.get("theme", f"Theme {i+1}")
+                specific_tech = theme_data.get("specific_tech_example", "PyTorch")
+                impl_detail = theme_data.get("implementation_detail", "for model training")
+            else:
+                theme = str(theme_data)
+                specific_tech = "PyTorch"
+                impl_detail = "for model training"
+            
             ideal_bullets.append({
                 "bullet_index": [2, 5, 8, 11][i] if i < 4 else 11,
                 "block_index": i,
                 "theme": theme,
                 "implicit_requirement": top_3[i] if i < len(top_3) else "",
                 "supporting_keywords": [],
+                "specific_technology": specific_tech,
+                "implementation_detail": impl_detail,
                 "source": "ideal_candidate",
             })
         return {
@@ -1101,7 +1490,6 @@ CRITICAL RULES:
             "importance_ranking": list(range(12)),
             "keyword_usage_map": {},
         }
-
 
 # ============================================================
 # 🔒 LaTeX-safe utils
@@ -1282,8 +1670,10 @@ IMPORTANT:
         if all_raw:
             all_fixed = await fix_capitalization_batch(all_raw)
             idx = 0
-            must_have = all_fixed[idx:idx + len(must_raw)]; idx += len(must_raw)
-            should_have = all_fixed[idx:idx + len(should_raw)]; idx += len(should_raw)
+            must_have = all_fixed[idx:idx + len(must_raw)]
+            idx += len(must_raw)
+            should_have = all_fixed[idx:idx + len(should_raw)]
+            idx += len(should_raw)
             nice_to_have = all_fixed[idx:idx + len(nice_raw)]
         else:
             must_have, should_have, nice_to_have = [], [], []
@@ -1309,14 +1699,22 @@ IMPORTANT:
 
         log_event(f"💡 [JD KEYWORDS] must={len(must_have)}, should={len(should_have)}, nice={len(nice_to_have)}")
         return {
-            "must_have": must_have, "should_have": should_have, "nice_to_have": nice_to_have,
-            "all_keywords": all_keywords, "responsibilities": responsibilities, "domain": domain,
+            "must_have": must_have,
+            "should_have": should_have,
+            "nice_to_have": nice_to_have,
+            "all_keywords": all_keywords,
+            "responsibilities": responsibilities,
+            "domain": domain,
         }
     except Exception as e:
         log_event(f"⚠️ [JD KEYWORDS] Failed: {e}")
         return {
-            "must_have": [], "should_have": [], "nice_to_have": [],
-            "all_keywords": [], "responsibilities": [], "domain": "Technology",
+            "must_have": [],
+            "should_have": [],
+            "nice_to_have": [],
+            "all_keywords": [],
+            "responsibilities": [],
+            "domain": "Technology",
         }
 
 
@@ -1426,7 +1824,7 @@ async def replace_skills_section(body_tex: str, skills: List[str]) -> str:
 
 
 # ============================================================
-# ✨ ENHANCED BULLET GENERATION — 8 keyword + 4 ideal candidate
+# ✨ ENHANCED BULLET GENERATION v4.0 — TECHNOLOGY SPECIFICITY
 # ============================================================
 
 # Global keyword dedup tracker: ensures NO keyword appears in more than 1 bullet
@@ -1456,13 +1854,13 @@ async def generate_credible_bullets(
     ideal_candidate: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[str], Set[str]]:
     """
-    Generate ENHANCED resume bullets with:
-    - ✨ NEW: 8 keyword-sourced + 4 ideal-candidate-sourced across resume
-    - ✨ NEW: NO keyword used twice (global dedup)
-    - ✨ Unique action verbs (NO repetition across all 12 bullets)
-    - ✨ Different sentence structures for each bullet
-    - ✨ 4 numbers total (positions 2,6,7,10)
-    - ✨ 4 different number categories
+    ✨ v4.0 ENHANCED: Generate HIGHLY SPECIFIC resume bullets with:
+    - Specific technology implementations (Llama, BERT, Kubernetes) - NO VERSIONS
+    - Implementation details (LoRA adapters, batch size 32, learning rate 1e-4)
+    - Fresher-appropriate scope and metrics
+    - NO keyword used twice (global dedup)
+    - Unique action verbs
+    - Progressive complexity (earlier = simpler, later = advanced)
     """
     global _global_keyword_assignments
 
@@ -1478,7 +1876,7 @@ async def generate_credible_bullets(
             quantified_bullets_in_block.append((i, category))
 
     # Get verb categories and pre-select unique verbs
-    verb_categories = get_verb_categories_for_context(exp_context.get("type", "internship"))
+    verb_categories = get_verb_categories_for_context(exp_context.get("type", "internship"), block_index)
     suggested_verbs = []
     for cat in (verb_categories * 3)[:num_bullets]:
         verb = get_diverse_verb(cat)
@@ -1486,36 +1884,44 @@ async def generate_credible_bullets(
 
     tech_depth = get_technical_depth_phrase("ml_techniques")
     result_phrase = get_result_phrase("performance")
-    believability = get_believability_phrase()
+    believability = get_believability_phrase(block_index=block_index)
 
-    # ✨ NEW: Determine bullet sources from plan
+    # ✨ NEW: Determine bullet sources from plan with SPECIFIC TECHNOLOGIES
     bullet_sources = []  # list of dicts per bullet in this block
     for local_idx in range(num_bullets):
         abs_idx = bullet_start_position + local_idx
-        source_info = {"source": "keyword", "primary_keyword": "", "theme": "", "implicit_requirement": ""}
+        source_info = {
+            "source": "keyword",
+            "primary_keyword": "",
+            "theme": "",
+            "specific_technology": "",
+            "implementation_context": "",
+        }
 
         if bullet_plan:
             # Check keyword bullets
             for kb in bullet_plan.get("keyword_bullets", []):
-                if kb.get("bullet_index") == abs_idx or kb.get("block_index") == block_index:
-                    # Match by block index and local position
-                    block_kbs = [b for b in bullet_plan["keyword_bullets"] if b.get("block_index") == block_index]
-                    kbs_in_block = sorted(block_kbs, key=lambda x: x.get("bullet_index", 99))
-                    keyword_local_indices = []
-                    for bk in kbs_in_block:
-                        if bk.get("source") == "keyword":
-                            keyword_local_indices.append(bk)
+                if kb.get("bullet_index") == abs_idx and kb.get("block_index") == block_index:
+                    source_info = {
+                        "source": "keyword",
+                        "primary_keyword": kb.get("primary_keyword", ""),
+                        "secondary_keywords": kb.get("secondary_keywords", []),
+                        "theme": kb.get("theme", ""),
+                        "specific_technology": kb.get("specific_technology", ""),
+                        "implementation_context": kb.get("implementation_context", ""),
+                    }
                     break
 
             # Check ideal candidate bullets
             for ib in bullet_plan.get("ideal_candidate_bullets", []):
-                if ib.get("block_index") == block_index:
+                if ib.get("bullet_index") == abs_idx and ib.get("block_index") == block_index:
                     source_info = {
                         "source": "ideal_candidate",
-                        "primary_keyword": "",
                         "theme": ib.get("theme", ""),
                         "implicit_requirement": ib.get("implicit_requirement", ""),
                         "supporting_keywords": ib.get("supporting_keywords", []),
+                        "specific_technology": ib.get("specific_technology", ""),
+                        "implementation_detail": ib.get("implementation_detail", ""),
                     }
                     break
 
@@ -1536,7 +1942,18 @@ async def generate_credible_bullets(
     if keywords_for_block:
         keywords_for_block = await fix_capitalization_batch(keywords_for_block)
 
+    # ✨ NEW: Convert generic keywords to SPECIFIC technologies (NO VERSIONS)
+    specific_technologies = []
+    for kw in keywords_for_block[:10]:
+        specific_tech = await get_specific_technology(
+            kw,
+            context="; ".join(responsibilities[:2]) if responsibilities else "",
+            block_index=block_index,
+        )
+        specific_technologies.append(specific_tech)
+
     keywords_str = ", ".join(keywords_for_block[:10]) if keywords_for_block else "Python, Machine Learning"
+    specific_tech_str = ", ".join(specific_technologies[:8]) if specific_technologies else keywords_str
     resp_str = "; ".join(responsibilities[:3]) if responsibilities else "Model Development; Evaluation; Deployment"
 
     core_focus_str = ", ".join(core_pool[:4]) if core_pool else ""
@@ -1544,6 +1961,9 @@ async def generate_credible_bullets(
 
     tech_vocab = exp_context.get("technical_vocabulary", [])
     vocab_str = ", ".join(tech_vocab[:5]) if tech_vocab else ""
+
+    realistic_tech = exp_context.get("realistic_technologies", [])
+    realistic_tech_str = ", ".join(realistic_tech[:6]) if realistic_tech else ""
 
     # Build quantification instructions
     quant_instructions = []
@@ -1555,36 +1975,38 @@ async def generate_credible_bullets(
         else:
             if category == "count_scale":
                 quant_instructions.append(
-                    f"   • Bullet {local_idx + 1}: Include COUNT metric (e.g., '10,347 samples')")
+                    f"   • Bullet {local_idx + 1}: Include COUNT metric (e.g., '8,347 samples')")
             elif category == "metric_achievement":
                 quant_instructions.append(
-                    f"   • Bullet {local_idx + 1}: Include ML METRIC (e.g., 'F1 score of 0.87')")
+                    f"   • Bullet {local_idx + 1}: Include ML METRIC (e.g., 'F1 score of 0.85')")
             elif category == "percent_improvement":
                 quant_instructions.append(
-                    f"   • Bullet {local_idx + 1}: Include PERCENTAGE improvement (e.g., '23.7%')")
+                    f"   • Bullet {local_idx + 1}: Include PERCENTAGE improvement (e.g., '17.3%')")
 
     quant_instruction = ""
     if quant_instructions:
         quant_instruction = f"""
-🎯 QUANTIFICATION REQUIREMENTS:
+🎯 QUANTIFICATION REQUIREMENTS (FRESHER-APPROPRIATE):
 {chr(10).join(quant_instructions)}
    • Other bullets: NO numbers
-   • Numbers must end in ODD digits (e.g., 23.7%, 10,347, 0.87)
+   • Numbers must be MODEST for intern level (not millions, not 99% accuracy)
+   • Numbers end in ODD digits (e.g., 17.3%, 8,347, 0.85)
 """
     else:
-        quant_instruction = "🎯 NO quantification for this block. Focus on methodology and qualitative impact.\n"
+        quant_instruction = "🎯 NO quantification for this block. Focus on methodology and implementation details.\n"
 
-    # ✨ NEW: Build ideal candidate bullet instructions
+    # ✨ NEW: Build ideal candidate bullet instructions with SPECIFIC TECH
     ideal_bullet_instructions = ""
     ideal_themes_in_block = []
     if ideal_candidate and bullet_plan:
         for ib in bullet_plan.get("ideal_candidate_bullets", []):
             if ib.get("block_index") == block_index:
                 ideal_themes_in_block.append(ib)
-
     if ideal_themes_in_block:
         themes_text = "\n".join([
             f"   • One bullet MUST address: \"{t.get('theme', '')}\""
+            f"\n     Specific tech: {t.get('specific_technology', 'N/A')}"
+            f"\n     Implementation: {t.get('implementation_detail', 'N/A')}"
             f"\n     (Implicit requirement: {t.get('implicit_requirement', 'N/A')})"
             for t in ideal_themes_in_block
         ])
@@ -1596,8 +2018,8 @@ async def generate_credible_bullets(
         ideal_bullet_instructions = f"""
 🌟 IDEAL CANDIDATE BULLET (1 of 3 bullets in this block):
 {themes_text}
-   • Weave in these supporting keywords naturally: {skw_str}
-   • This bullet shows IMPLICIT value, not just keyword matching
+   • Supporting keywords to weave in: {skw_str}
+   • This bullet shows SPECIFIC TECHNOLOGY implementation, not just generic skill mention
 """
 
     # ✨ NEW: Keyword dedup instruction
@@ -1605,30 +2027,58 @@ async def generate_credible_bullets(
     dedup_instruction = ""
     if already_used:
         dedup_instruction = f"""
-🚫 KEYWORD DEDUP — These keywords are ALREADY USED in other bullets (DO NOT use as primary):
+🚫 KEYWORD DEDUP — These keywords ALREADY USED in other bullets (DO NOT use as primary):
 {', '.join(already_used[:20])}
 """
 
-    prompt = f"""Write EXACTLY {num_bullets} HIGHLY CREDIBLE resume bullet points for an INTERN at "{experience_company}",
+    # ✨ UPDATED: Technology specificity examples WITHOUT VERSION NUMBERS
+    tech_examples = """
+🔧 TECHNOLOGY SPECIFICITY EXAMPLES (NO VERSION NUMBERS):
+Instead of: "Used LLM for text generation"
+Write: "Fine-tuned Llama with LoRA adapters on 15K instruction-response pairs for domain-specific text generation"
+
+Instead of: "Implemented NLP pipeline"
+Write: "Built BERT classification pipeline with custom tokenization for sentiment analysis on product reviews"
+
+Instead of: "Deployed model on cloud"
+Write: "Deployed PyTorch model via AWS SageMaker endpoints with auto-scaling and CloudWatch monitoring"
+
+Instead of: "Used Kubernetes"
+Write: "Orchestrated model serving with Kubernetes using KServe for multi-model deployment"
+"""
+
+    prompt = f"""Write EXACTLY {num_bullets} HIGHLY CREDIBLE and SPECIFIC resume bullet points for an INTERN at "{experience_company}",
 tailored for applying to "{target_company}" ({target_role}).
 
 🎯 CRITICAL REQUIREMENTS:
-0. USE: INDIAN ACCENT IN LANGUAGE and USA SPELLING STANDARDS THROUGHOUT.
+0. USE: INDIAN ENGLISH (USA spelling) with professional, technical tone.
 
 1. LENGTH: Each bullet MUST be EXACTLY 18-22 words
 
-2. SKILLS TO USE: Each bullet MUST naturally integrate 2-3 skills from: {keywords_str}
-   ⚠️ Each keyword should be PRIMARY in only ONE bullet across the ENTIRE resume
+2. ✨ TECHNOLOGY SPECIFICITY (MOST IMPORTANT):
+   - Use SPECIFIC technology implementations, NOT generic terms
+   - DO NOT include version numbers (e.g., "PyTorch" not "PyTorch 2.1", "BERT" not "BERT-base-uncased")
+   - Available specific technologies: {specific_tech_str}
+   - Company-realistic tech: {realistic_tech_str}
+   - Generic keywords to make specific: {keywords_str}
+   
+{tech_examples}
 
-3. ✨ ACTION VERBS (NO substitution, NO repetition):
+3. ✨ IMPLEMENTATION DETAILS:
+   - Include HOW the technology was used (e.g., "with batch size 32", "using Adam optimizer", "via Docker containers")
+   - Show configuration details (e.g., "PyTorch with mixed precision training")
+   - Mention specific components (e.g., "BERT tokenizer", "LoRA adapters", "Kubernetes Helm charts")
+   - NO version numbers in any technology mention
+
+4. ✨ ACTION VERBS (NO substitution, NO repetition):
    - Bullet 1: {suggested_verbs[0]}
    - Bullet 2: {suggested_verbs[1]}
    - Bullet 3: {suggested_verbs[2]}
 
-4. ✨ SENTENCE STRUCTURES: Use DIFFERENT structures for each bullet
+5. ✨ SENTENCE STRUCTURES: Use DIFFERENT structures for each bullet
 
-5. TECHNICAL DEPTH: Show HOW, not just WHAT:
-   - Example technique: "{tech_depth}"
+6. TECHNICAL DEPTH: Show implementation methodology:
+   - Example: "{tech_depth}"
 
 {quant_instruction}
 
@@ -1636,52 +2086,73 @@ tailored for applying to "{target_company}" ({target_role}).
 
 {dedup_instruction}
 
-6. BELIEVABILITY FOR INTERN LEVEL:
+7. BELIEVABILITY FOR INTERN LEVEL (Block {block_index} of {total_blocks}):
    - Scope: {progression['scope'][0]} / {progression['scope'][1]} level work
    - Autonomy: {progression['autonomy']}
    - Complexity: {progression['complexity']}
-   {f'- Collaboration: {believability}' if believability else ''}
+   - Technology level: {progression['technologies']}
+   {f'- Context: {believability}' if believability else ''}
+   - Numbers should be MODEST (thousands, not millions; 70-90% accuracy, not 99%)
+   - Projects should be RESEARCH/ACADEMIC scale, not production at scale
 
-7. DOMAIN VOCABULARY: {vocab_str}
+8. DOMAIN VOCABULARY: {vocab_str}
    Company domain: {exp_context['domain']}
 
 {core_rule}
 
+9. ✨ PROGRESSIVE COMPLEXITY:
+   - Block 0 (most recent): Advanced tech, independence, sophisticated approaches
+   - Block 1-2 (mid): Standard frameworks, guided work, established methods
+   - Block 3 (earliest): Basic tools, close supervision, foundational tasks
+   
+   Current block: {block_index} → Use {"advanced" if block_index == 0 else "intermediate" if block_index <= 1 else "foundational"} technologies
+
 JOB RESPONSIBILITIES TO ALIGN WITH:
 {resp_str}
 
+CRITICAL: Each bullet MUST include:
+1. Specific technology WITHOUT version numbers (e.g., "PyTorch", "BERT", "Kubernetes" - NO "2.1", "base", "1.28")
+2. Implementation detail (e.g., "with LoRA adapters", "using stratified CV", "via Docker multi-stage builds")
+3. Context of use (e.g., "for sentiment classification", "on 10K medical abstracts", "across 5-fold CV")
+
 Return STRICT JSON with EXACTLY {num_bullets} bullets:
-{{"bullets": ["bullet1", "bullet2", "bullet3"], "primary_keywords_used": ["kw1", "kw2", "kw3"]}}
+{{"bullets": ["bullet1", "bullet2", "bullet3"], "primary_keywords_used": ["kw1", "kw2", "kw3"], "specific_technologies_used": ["tech1", "tech2", "tech3"]}}
 """
 
     try:
         data = await gpt_json(prompt, temperature=0.3)
         bullets = data.get("bullets", []) or []
         primary_kws = data.get("primary_keywords_used", []) or []
+        specific_techs = data.get("specific_technologies_used", []) or []
 
         cleaned: List[str] = []
         newly_used: Set[str] = set()
 
         for local_idx, b in enumerate(bullets[:num_bullets]):
             b = str(b).strip()
+            
             # Fix capitalization via GPT
             b = await fix_capitalization_gpt(b)
 
-            # Check quantification
+            # Check quantification - remove numbers if shouldn't have them
             should_have_number = any(idx == local_idx for idx, _ in quantified_bullets_in_block)
             if not should_have_number:
+                # Remove all numbers from non-quantified bullets
                 b = re.sub(r'\d+\.?\d*%', '', b)
                 b = re.sub(r'\d+x', '', b)
-                b = re.sub(r'\d+,?\d*\s+(?:samples|records|minutes|hours)', '', b)
-                b = re.sub(r'(?:F1|f1)\s+score\s+of\s+\d+\.\d+', '', b)
-                b = re.sub(r'from\s+\d+%?\s+to\s+\d+%?', '', b)
+                b = re.sub(r'\d+,?\d*\s+(?:samples|records|minutes|hours|examples|instances)', '', b)
+                b = re.sub(r'(?:F1|f1)\s+score\s+of\s+\d+\.\d+', 'F1 score on validation set', b)
+                b = re.sub(r'from\s+\d+%?\s+to\s+\d+%?', 'through systematic optimization', b)
+                b = re.sub(r'accuracy\s+of\s+\d+\.\d+%', 'strong accuracy', b)
                 b = re.sub(r'\s+', ' ', b).strip()
 
+            # Adjust length
             b = adjust_bullet_length(b)
             b = latex_escape_text(b)
 
             if b:
                 cleaned.append(b)
+                
                 # Track keyword usage
                 for kw in keywords_for_block:
                     if kw.lower() in b.lower():
@@ -1692,25 +2163,55 @@ Return STRICT JSON with EXACTLY {num_bullets} bullets:
                     pk = primary_kws[local_idx].lower().strip()
                     if pk and pk not in _global_keyword_assignments:
                         _global_keyword_assignments[pk] = bullet_start_position + local_idx
+                
+                # ✨ NEW: Track specific technologies
+                if local_idx < len(specific_techs):
+                    tech = specific_techs[local_idx].lower().strip()
+                    if tech:
+                        newly_used.add(tech)
+                        log_event(f"🔧 [SPECIFIC TECH USED] Bullet {bullet_start_position + local_idx}: {specific_techs[local_idx]}")
 
-        # Fallback bullets
+        # Fallback bullets with SPECIFIC TECHNOLOGIES (NO VERSIONS)
         while len(cleaned) < num_bullets:
             idx = len(cleaned)
             verb = suggested_verbs[idx]
-            kw1 = fix_skill_capitalization_sync(keywords_for_block[idx % max(1, len(keywords_for_block))]) if keywords_for_block else "Python"
-            kw2 = fix_skill_capitalization_sync(keywords_for_block[(idx + 1) % max(1, len(keywords_for_block))]) if len(keywords_for_block) > 1 else "Machine Learning"
+            
+            # Get specific technology instead of generic keyword
+            if keywords_for_block:
+                generic_kw = keywords_for_block[idx % max(1, len(keywords_for_block))]
+                kw1 = await get_specific_technology(generic_kw, context="model development", block_index=block_index)
+            else:
+                kw1 = "PyTorch"
+            
+            if len(keywords_for_block) > 1:
+                generic_kw2 = keywords_for_block[(idx + 1) % max(1, len(keywords_for_block))]
+                kw2 = await get_specific_technology(generic_kw2, context="data processing", block_index=block_index)
+            else:
+                kw2 = "scikit-learn Pipeline"
 
             should_have_number = any(i == idx for i, _ in quantified_bullets_in_block)
             if should_have_number:
                 category = next(cat for i, cat in quantified_bullets_in_block if i == idx)
-                quant_phrase = generate_quantified_phrase(category, jd_text)
-                fallback = f"{verb} {kw1}-based analytical workflow with {kw2} integration, {quant_phrase} through systematic optimization."
+                quant_phrase = generate_quantified_phrase(category, jd_text, is_fresher=True)
+                impl_detail = await get_implementation_detail("model_training", kw1, context=jd_text)
+                fallback = f"{verb} {impl_detail}, integrating {kw2} for data processing, {quant_phrase} through systematic hyperparameter optimization."
             else:
-                fallback = f"{verb} {kw1}-based analytical workflow with {kw2} integration, enabling systematic evaluation and improved reproducibility."
+                impl_detail = await get_implementation_detail("data_processing", kw1, context=jd_text)
+                fallback = f"{verb} {impl_detail} with {kw2} integration, ensuring reproducible results through comprehensive validation and extensive documentation."
 
             cleaned.append(latex_escape_text(fallback))
             newly_used.add(kw1.lower())
             newly_used.add(kw2.lower())
+
+        log_event(f"✅ [BULLETS BLOCK {block_index}] Generated with specific technologies (NO VERSIONS):")
+        for i, bullet in enumerate(cleaned):
+            # Extract technology mentions from bullet
+            tech_mentions = []
+            for tech_type in TECHNOLOGY_SPECIFICITY_MAP.values():
+                for tech in tech_type:
+                    if tech.lower() in bullet.lower():
+                        tech_mentions.append(tech)
+            log_event(f"   • Bullet {bullet_start_position + i}: {', '.join(tech_mentions[:3]) if tech_mentions else 'generic'}")
 
         return cleaned[:num_bullets], newly_used
 
@@ -1719,10 +2220,12 @@ Return STRICT JSON with EXACTLY {num_bullets} bullets:
         fallbacks = []
         for idx in range(num_bullets):
             verb = suggested_verbs[idx]
-            fallback = f"{verb} Machine Learning model development and Data Pipeline implementation supporting research objectives with reliable engineering practices."
+            # Use specific tech even in fallback (NO VERSIONS)
+            tech1 = await get_specific_technology("Machine Learning", context="model development", block_index=block_index)
+            tech2 = await get_specific_technology("Data Pipeline", context="processing", block_index=block_index)
+            fallback = f"{verb} {tech1} workflow with {tech2} implementation, supporting research objectives through systematic development and comprehensive validation practices."
             fallbacks.append(latex_escape_text(fallback))
         return fallbacks, set()
-
 
 async def rewrite_experience_with_skill_alignment(
     tex_content: str,
@@ -1734,12 +2237,13 @@ async def rewrite_experience_with_skill_alignment(
     bullet_plan: Optional[Dict[str, Any]] = None,
     ideal_candidate: Optional[Dict[str, Any]] = None,
 ) -> Tuple[str, Set[str]]:
-    """Rewrite all experience bullets using the enhanced plan."""
+    """Rewrite all experience bullets using the enhanced v4.0 plan with technology specificity."""
     # Reset all tracking for new resume
     reset_verb_tracking()
     reset_result_phrase_tracking()
     reset_quantification_tracking()
     reset_keyword_assignment_tracking()
+    reset_technology_tracking()
 
     must_have = jd_info.get("must_have", []) or []
     should_have = jd_info.get("should_have", []) or []
@@ -1756,7 +2260,7 @@ async def rewrite_experience_with_skill_alignment(
     block_index = 0
     absolute_bullet_position = 0
 
-    # ✨ NEW: Extract experience company names from tex via GPT
+    # Extract experience company names from tex via GPT
     exp_companies = await _extract_experience_companies(tex_content)
 
     for m in exp_pat.finditer(tex_content):
@@ -1840,6 +2344,7 @@ async def rewrite_experience_with_skill_alignment(
     log_event(f"🎲 [QUANTIFICATION] Positions: {QUANTIFIED_POSITIONS}, Hero: {HERO_POSITIONS}")
     log_event(f"✅ [VERBS] Total unique: {len(_used_verbs_global)}/12")
     log_event(f"🔑 [KEYWORD DEDUP] Unique primary keywords: {len(_global_keyword_assignments)}")
+    log_event(f"🔧 [TECH SPECIFIC] Unique technologies used: {len(_used_specific_technologies)}")
 
     return "".join(out), exp_used_keywords
 
@@ -1972,7 +2477,7 @@ def compute_coverage(tex_content: str, keywords: List[str]) -> Dict[str, Any]:
 
 
 # ============================================================
-# 🚀 Main Optimizer — v3.0 with Ideal Candidate Profiling
+# 🚀 Main Optimizer — v4.0 with Technology Specificity
 # ============================================================
 
 async def optimize_resume(
@@ -1982,7 +2487,7 @@ async def optimize_resume(
     target_role: str,
     extra_keywords: Optional[str] = None,
 ) -> Tuple[str, Dict[str, Any]]:
-    log_event("🟨 [OPTIMIZE] Starting v3.0 with IDEAL CANDIDATE PROFILING & keyword dedup")
+    log_event("🟦 [OPTIMIZE] Starting v4.0 with TECHNOLOGY SPECIFICITY & fresher-appropriate scope")
 
     # 1) JD keywords
     jd_info = await extract_keywords_with_priority(jd_text)
@@ -1992,8 +2497,8 @@ async def optimize_resume(
     core_keywords_raw = company_core.get("core_keywords", []) or []
     core_keywords = await fix_capitalization_batch([str(k).strip() for k in core_keywords_raw if str(k).strip()])
 
-    # 3) ✨ NEW: IDEAL CANDIDATE PROFILING
-    log_event("🌟 [IDEAL CANDIDATE] Profiling ideal candidate...")
+    # 3) ✨ IDEAL CANDIDATE PROFILING with specific tech
+    log_event("🌟 [IDEAL CANDIDATE] Profiling ideal candidate with technology specificity...")
     ideal_candidate = await profile_ideal_candidate(jd_text, target_company, target_role)
     log_event(f"🌟 [IDEAL CANDIDATE] Top 3 must-haves: {ideal_candidate.get('top_3_must_haves', [])}")
 
@@ -2034,8 +2539,8 @@ async def optimize_resume(
 
     log_event(f"📊 [KEYWORDS] JD={len(jd_info.get('all_keywords', []))} + CORE={len(core_keywords)} + EXTRA={len(extra_list)} → TOTAL={len(all_keywords)}")
 
-    # 6) ✨ NEW: RANK ALL BULLET POINTS — 8 keyword + 4 ideal candidate
-    log_event("📋 [BULLET RANKING] Planning 12 bullets (8 keyword + 4 ideal candidate)...")
+    # 6) ✨ RANK ALL BULLET POINTS with specific technologies
+    log_event("📋 [BULLET RANKING] Planning 12 bullets (8 keyword + 4 ideal) with SPECIFIC TECH...")
     bullet_plan = await rank_all_bullet_points(
         jd_text=jd_text,
         target_company=target_company,
@@ -2045,6 +2550,12 @@ async def optimize_resume(
     )
     log_event(f"📋 [BULLET PLAN] keyword_bullets={len(bullet_plan.get('keyword_bullets', []))}, "
               f"ideal_bullets={len(bullet_plan.get('ideal_candidate_bullets', []))}")
+
+    # Log specific technologies planned
+    for kb in bullet_plan.get("keyword_bullets", [])[:3]:
+        log_event(f"   Keyword bullet: {kb.get('primary_keyword')} → {kb.get('specific_technology', 'N/A')}")
+    for ib in bullet_plan.get("ideal_candidate_bullets", [])[:2]:
+        log_event(f"   Ideal bullet: {ib.get('theme', 'N/A')[:40]} → {ib.get('specific_technology', 'N/A')}")
 
     # 7) Coursework
     courses = await extract_coursework_gpt(jd_text, max_courses=24)
@@ -2056,7 +2567,7 @@ async def optimize_resume(
     body = replace_relevant_coursework_distinct(body, courses, max_per_line=8)
     log_event("✅ [COURSEWORK] Updated")
 
-    # 10) ✨ ENHANCED: Rewrite experience with bullet plan + ideal candidate
+    # 10) ✨ v4.0 ENHANCED: Rewrite experience with technology specificity
     body, exp_used_keywords = await rewrite_experience_with_skill_alignment(
         body, jd_text, jd_info,
         target_company=target_company,
@@ -2066,11 +2577,11 @@ async def optimize_resume(
         ideal_candidate=ideal_candidate,
     )
     log_event(f"✅ [EXPERIENCE] {len(exp_used_keywords)} keywords used, "
-              f"{len(_global_keyword_assignments)} unique primary keywords")
+              f"{len(_global_keyword_assignments)} unique primary keywords, "
+              f"{len(_used_specific_technologies)} specific technologies")
 
-    # 11) Skills section — VALIDATED ONLY
     skills_list: List[str] = []
-    # Add from experience
+
     for kw in exp_used_keywords:
         fixed = fix_skill_capitalization_sync(kw)
         if fixed and fixed.lower() not in [s.lower() for s in skills_list]:
@@ -2097,8 +2608,7 @@ async def optimize_resume(
         skills_list = await fix_capitalization_batch(skills_list)
 
     body = await replace_skills_section(body, skills_list)
-    log_event(f"✅ [SKILLS] {len(skills_list)} validated skills")
-
+    log_event(f"✅ [SKILLS] {len(skills_list)} validated skills (GENERIC TERMS ONLY)")
     # 12) Merge back
     final_tex = _merge_tex(preamble, body)
 
@@ -2125,11 +2635,12 @@ async def optimize_resume(
         "skills_list": skills_list,
         "unique_numbers_used": all_numbers_used,
         "global_keyword_assignments": dict(_global_keyword_assignments),
+        "specific_technologies_used": list(_used_specific_technologies),
     }
 
 
 # ============================================================
-# 🚀 API Endpoint
+# 🚀 API Endpoint v4.0 - CORRECTED & UPGRADED
 # ============================================================
 
 @router.post("/")
@@ -2226,9 +2737,20 @@ async def optimize_endpoint(
             saved_paths.append(str(opt_path))
             log_event(f"💾 [SAVE] Optimized → {opt_path}")
 
-        # ✨ UPGRADED: Response includes ideal candidate + bullet plan
+        # ✨ v4.0: Extract response data
         ideal_candidate_info = info.get("ideal_candidate", {})
         bullet_plan_info = info.get("bullet_plan", {})
+
+        # ✨ v4.0 FIX: Build technology mappings OUTSIDE dict (avoid await in comprehension)
+        generic_to_specific_mappings = {}
+        all_keywords_sample = info.get("all_keywords", [])[:10]
+        for keyword in all_keywords_sample:
+            try:
+                specific_tech = await get_specific_technology(keyword, context="", block_index=0)
+                generic_to_specific_mappings[keyword] = specific_tech
+            except Exception as map_error:
+                log_event(f"⚠️ [TECH MAPPING] Failed for '{keyword}': {map_error}")
+                generic_to_specific_mappings[keyword] = keyword
 
         return JSONResponse({
             "company_name": target_company,
@@ -2245,7 +2767,7 @@ async def optimize_endpoint(
                 ),
             },
             "company_core": info.get("company_core", {}),
-            # ✨ NEW: Ideal candidate analysis
+            # ✨ Ideal candidate analysis
             "ideal_candidate": {
                 "profile_summary": ideal_candidate_info.get("ideal_profile_summary", ""),
                 "top_3_must_haves": ideal_candidate_info.get("top_3_must_haves", []),
@@ -2253,12 +2775,18 @@ async def optimize_endpoint(
                 "differentiation_factors": ideal_candidate_info.get("differentiation_factors", []),
                 "bullet_themes_used": ideal_candidate_info.get("ideal_candidate_bullet_themes", []),
             },
-            # ✨ NEW: Bullet plan transparency
+            # ✨ Bullet plan transparency
             "bullet_plan": {
                 "keyword_bullets_count": len(bullet_plan_info.get("keyword_bullets", [])),
                 "ideal_candidate_bullets_count": len(bullet_plan_info.get("ideal_candidate_bullets", [])),
                 "importance_ranking": bullet_plan_info.get("importance_ranking", []),
                 "keyword_dedup_map": info.get("global_keyword_assignments", {}),
+            },
+            # ✨ v4.0: Technology specificity tracking (FIXED - no await in dict comprehension)
+            "technology_specificity": {
+                "generic_to_specific_mappings": generic_to_specific_mappings,
+                "specific_technologies_used": info.get("specific_technologies_used", []),
+                "technology_diversity": len(info.get("specific_technologies_used", [])),
             },
             "optimized": {
                 "tex": render_final_tex(optimized_tex_final),
